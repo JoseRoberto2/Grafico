@@ -27,13 +27,13 @@ public class ProgGrafico extends javax.swing.JFrame {
     double value = 0;
     Second current = new Second();
 
-    public ProgGrafico() throws RemoteException, NotBoundException {
+    public ProgGrafico() throws RemoteException, NotBoundException, InterruptedException {
         initComponents();
         iniciarGrafico();
 
     }
 
-    private void iniciarGrafico() throws RemoteException, NotBoundException {
+    private void iniciarGrafico() throws RemoteException, NotBoundException, InterruptedException {
         /*Inicialização de variáveis*/
         seriesValor = new TimeSeries("Valor");
         SerieDados = new TimeSeriesCollection();
@@ -53,23 +53,12 @@ public class ProgGrafico extends javax.swing.JFrame {
         pnlGrafico.add(PainelGrafico); //finalmente, adicionar o gráfico ao painel
         pnlGrafico.repaint();//repintar com os gráficos iniciais
         
-        Registry regcli = LocateRegistry.getRegistry("10.163.16.21", 1169);
-        
+        Registry regcli = LocateRegistry.getRegistry("127.0.0.1", 1169);
         PacMonitor monitor = (PacMonitor) regcli.lookup("PacServer");
-        PcapPacketHandler<String> jpacketHandler = new PcapPacketHandler<String>() {
-
-            public void nextPacket(PcapPacket packet, String user) {
-
-                System.out.printf("Received packet at %s caplen=%-4d len=%-4d %s\n",
-                        new Date(packet.getCaptureHeader().timestampInMillis()),
-                        packet.getCaptureHeader().caplen(), // Length actually captured  
-                        packet.getCaptureHeader().seconds(), // Original length 
-                        packet.getTotalSize(),
-                        user // User supplied object  
-                );
-            }
-        };
-        monitor.chama(jpacketHandler);
+        for (int i = 0; i < 10; ++i) {
+            System.out.println("tamanho: " + monitor.chama().get(i));
+            sleep(1000);
+        }
 
     }
 
@@ -179,6 +168,8 @@ public class ProgGrafico extends javax.swing.JFrame {
                 } catch (RemoteException ex) {
                     Logger.getLogger(ProgGrafico.class.getName()).log(Level.SEVERE, null, ex);
                 } catch (NotBoundException ex) {
+                    Logger.getLogger(ProgGrafico.class.getName()).log(Level.SEVERE, null, ex);
+                } catch (InterruptedException ex) {
                     Logger.getLogger(ProgGrafico.class.getName()).log(Level.SEVERE, null, ex);
                 }
 
