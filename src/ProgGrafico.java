@@ -1,6 +1,7 @@
 
 
 import static java.lang.Thread.sleep;
+import java.rmi.AccessException;
 import java.rmi.NotBoundException;
 import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
@@ -26,6 +27,7 @@ public class ProgGrafico extends javax.swing.JFrame {
     TimeSeriesCollection SerieDados;
     double value = 0;
     Second current = new Second();
+    PacMonitor monitor;
 
     public ProgGrafico() throws RemoteException, NotBoundException, InterruptedException {
         initComponents();
@@ -35,14 +37,14 @@ public class ProgGrafico extends javax.swing.JFrame {
 
     private void iniciarGrafico() throws RemoteException, NotBoundException, InterruptedException {
         /*Inicialização de variáveis*/
-        seriesValor = new TimeSeries("Valor");
+        seriesValor = new TimeSeries("Tamanho");
         SerieDados = new TimeSeriesCollection();
         SerieDados.addSeries(seriesValor);
 
         /*Rotina de Criação inicial do Gráfico*/
         XYDataset dados = SerieDados;
-        grafico = ChartFactory.createTimeSeriesChart("Exemplo Gráfico Times Series",
-                "Tempo", "Valores", dados);
+        grafico = ChartFactory.createTimeSeriesChart("Tamanho dos Pacotes do Servidor",
+                "Tempo", "Tamanho do Pacote", dados);
         PainelGrafico = new ChartPanel(grafico, true);
         PainelGrafico.setSize(pnlGrafico.getWidth(), pnlGrafico.getHeight());
         PainelGrafico.setVisible(true);
@@ -52,13 +54,6 @@ public class ProgGrafico extends javax.swing.JFrame {
         PainelGrafico.setVisible(true);//tornar o gráfico visivel
         pnlGrafico.add(PainelGrafico); //finalmente, adicionar o gráfico ao painel
         pnlGrafico.repaint();//repintar com os gráficos iniciais
-        
-        Registry regcli = LocateRegistry.getRegistry("127.0.0.1", 1169);
-        PacMonitor monitor = (PacMonitor) regcli.lookup("PacServer");
-        for (int i = 0; i < 10; ++i) {
-            System.out.println("tamanho: " + monitor.chama().get(i));
-            sleep(1000);
-        }
 
     }
 
@@ -68,6 +63,10 @@ public class ProgGrafico extends javax.swing.JFrame {
 
         pnlGrafico = new javax.swing.JPanel();
         btnGrafico = new javax.swing.JButton();
+        jLabel1 = new javax.swing.JLabel();
+        jTFIP = new javax.swing.JTextField();
+        jLabel2 = new javax.swing.JLabel();
+        jTFPorta = new javax.swing.JTextField();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
         setTitle("Exemplo Gráfico usando JFreeChart");
@@ -92,6 +91,10 @@ public class ProgGrafico extends javax.swing.JFrame {
             }
         });
 
+        jLabel1.setText("IP do Servidor:");
+
+        jLabel2.setText("Porta:");
+
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
         getContentPane().setLayout(layout);
         layout.setHorizontalGroup(
@@ -99,7 +102,16 @@ public class ProgGrafico extends javax.swing.JFrame {
             .addGroup(layout.createSequentialGroup()
                 .addGap(28, 28, 28)
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addComponent(pnlGrafico, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addGroup(layout.createSequentialGroup()
+                        .addComponent(jLabel2)
+                        .addGap(18, 18, 18)
+                        .addComponent(jTFPorta, javax.swing.GroupLayout.PREFERRED_SIZE, 80, javax.swing.GroupLayout.PREFERRED_SIZE))
+                    .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
+                        .addComponent(pnlGrafico, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addGroup(javax.swing.GroupLayout.Alignment.LEADING, layout.createSequentialGroup()
+                            .addComponent(jLabel1)
+                            .addGap(18, 18, 18)
+                            .addComponent(jTFIP, javax.swing.GroupLayout.PREFERRED_SIZE, 200, javax.swing.GroupLayout.PREFERRED_SIZE)))
                     .addComponent(btnGrafico, javax.swing.GroupLayout.PREFERRED_SIZE, 155, javax.swing.GroupLayout.PREFERRED_SIZE))
                 .addContainerGap(20, Short.MAX_VALUE))
         );
@@ -108,9 +120,17 @@ public class ProgGrafico extends javax.swing.JFrame {
             .addGroup(layout.createSequentialGroup()
                 .addGap(19, 19, 19)
                 .addComponent(pnlGrafico, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                .addGap(18, 18, 18)
+                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                    .addComponent(jLabel1)
+                    .addComponent(jTFIP, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+                .addGap(18, 18, 18)
+                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                    .addComponent(jLabel2)
+                    .addComponent(jTFPorta, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+                .addGap(18, 18, 18)
                 .addComponent(btnGrafico)
-                .addContainerGap(24, Short.MAX_VALUE))
+                .addContainerGap(33, Short.MAX_VALUE))
         );
 
         pack();
@@ -118,15 +138,28 @@ public class ProgGrafico extends javax.swing.JFrame {
 
     private void btnGraficoActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnGraficoActionPerformed
 
+        Registry regcli;
+        try {
+            regcli = LocateRegistry.getRegistry(jTFIP.getText(), Integer.valueOf(jTFPorta.getText()));
+            monitor = (PacMonitor) regcli.lookup("PacServer");
+        } catch (RemoteException ex) {
+            Logger.getLogger(ProgGrafico.class.getName()).log(Level.SEVERE, null, ex);
+        } catch (NotBoundException ex) {
+            Logger.getLogger(ProgGrafico.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        
         new Thread(new Runnable() {
             @Override
             public void run() {
-                for (int i = 0; i <= 10; i++) {
-                    current = new Second();//pegar o tempo atual em mili
-                    seriesValor.addOrUpdate(current, 10 + Math.random());//adicionar um número randômico de teste
+                for (int i = 0; i <= 100; i++) {
                     try {
+                        current = new Second();//pegar o tempo atual em mili
+//                        seriesValor.addOrUpdate(current, 10 + Math.random());//adicionar um número randômico de teste
+                        seriesValor.addOrUpdate(current, monitor.chama().get(0));
                         sleep(1000);//esperar 1 segundo
                     } catch (InterruptedException ex) {
+                        Logger.getLogger(ProgGrafico.class.getName()).log(Level.SEVERE, null, ex);
+                    } catch (RemoteException ex) {
                         Logger.getLogger(ProgGrafico.class.getName()).log(Level.SEVERE, null, ex);
                     }
                 }
@@ -179,6 +212,10 @@ public class ProgGrafico extends javax.swing.JFrame {
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JButton btnGrafico;
+    private javax.swing.JLabel jLabel1;
+    private javax.swing.JLabel jLabel2;
+    private javax.swing.JTextField jTFIP;
+    private javax.swing.JTextField jTFPorta;
     private javax.swing.JPanel pnlGrafico;
     // End of variables declaration//GEN-END:variables
 }
